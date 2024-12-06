@@ -1,281 +1,208 @@
 #include <iostream>
 #include <string>
 #include <fstream>
-#include <cstdio>
 #include <iomanip>
 #include <ios>
 
 using namespace std;
 
-void inventory(), database(), exit(), overview(), monthly (), yearly (), compare ();
-void DisplayDatabase(), PauseDatabase();
-void viewMonthDatabase(int month);
+const string monthFiles[] = {
+    "Database/JanDatabase.txt", "Database/FebDatabase.txt", "Database/MarDatabase.txt",
+    "Database/AprDatabase.txt", "Database/MayDatabase.txt", "Database/JunDatabase.txt",
+    "Database/JulDatabase.txt", "Database/AugDatabase.txt", "Database/SepDatabase.txt",
+    "Database/OctDatabase.txt", "Database/NovDatabase.txt", "Database/DecDatabase.txt"
+};
+
+const string monthNames[] = {
+    "January", "February", "March", "April", "May", "June", 
+    "July", "August", "September", "October", "November", "December"
+};
+
+void inventory(), database(), exitProgram(), overview(), monthly(), yearly(), compare ();
+void displayDatabase(), viewMonthDatabase(int), monthlyChoice (int& Month);
+void ReadData(int Month, int& lastCusNo, int& monthlySales, int& monthlyProductsSold);
 
 
-int main()
-{
-    system("cls");
 
-    char Menu;
-    cout << "\t\t\t\tLittle Einsteins Co. Sales Tracker" << endl;
-    cout << "\t\t\t--------------------------------------------------" << endl;
-    cout << "A.) Add Transaction" << endl;
-    cout << "B.) View Database" << endl;
-    cout << "C.) General Overview" << endl;
-    cout << "D.) Exit Program" << endl;
-    cin >> Menu;
-
-    switch (Menu) {
-        case 'A': case 'a':
-            inventory();
-            break;
-        case 'B': case 'b':
-            database();
-            break;
-        case 'C': case 'c':
-            overview();
-            break;
-        case 'D': case 'd':
-            exit();
-            break;
-        default:
-            cout << "Invalid option! Please try again." << endl;
-            main();
-    }
-
-    cin.get(); 
+int main() {
+    char menu;
+    do {
+        system("cls");
+        cout << "\t\t\t-----------------------------------------------\n";
+        cout << "\t\t\t|\033[1;94m      Little Einsteins Co. Sales Tracker     \033[0m|\n";
+        cout << "\t\t\t-----------------------------------------------\n";
+        cout << "\t\t\t\t----------------------------\n";
+        cout << "\t\t\t\t|  A.) Add Transaction     |\n";
+        cout << "\t\t\t\t|  B.) View Database       |\n";
+        cout << "\t\t\t\t|  C.) General Overview    |\n";
+        cout << "\t\t\t\t|  D.) Exit Program        |\n";
+        cout << "\t\t\t\t----------------------------\n";
+        cin >> menu;
+        
+        switch (menu) {
+            case 'A': case 'a': inventory(); break;
+            case 'B': case 'b': database(); break;
+            case 'C': case 'c': overview(); break;
+            case 'D': case 'd': exitProgram(); break;
+            default: cout << "Invalid option! Please try again.\n";
+        }
+    } while (true);
 }
 
 void inventory() {
     system("cls");
-    int ProductChoice, CusNo, Qnt, Month;
-    string ProductName;
-    int Price = 0, monthlySales = 0, monthlyProductsSold = 0;
+    int productChoice, cusNo, qty, month, price = 0, monthlySales = 0, monthlyProductsSold = 0;
+    string productName;
+    
+    cout << "Enter the month (1-12): ";
+    cin >> month;
+    if (month < 1 || month > 12) { cout << "Invalid month\n"; return; }
 
-    cout << "Enter Month Product Sold (1-12): ";
-    cin >> Month;
-
-    if (Month < 1 || Month > 12) {
-        cout << "Invalid Month" << endl;
-        return;
-    }
-
-    string monthFiles[] = {
-        "Database/JanDatabase.txt", "Database/FebDatabase.txt", "Database/MarDatabase.txt",
-        "Database/AprDatabase.txt", "Database/MayDatabase.txt", "Database/JunDatabase.txt",
-        "Database/JulDatabase.txt", "Database/AugDatabase.txt", "Database/SepDatabase.txt",
-        "Database/OctDatabase.txt", "Database/NovDatabase.txt", "Database/DecDatabase.txt"};
-
-    ifstream inFile(monthFiles[Month - 1]);
+    ifstream inFile(monthFiles[month - 1]);
     int lastCusNo = 0;
-    string line;
+    ReadData(month, lastCusNo, monthlySales, monthlyProductsSold);
+    cusNo = (lastCusNo == 0) ? 1 : lastCusNo + 1;
 
-    if (inFile) {
-        while (getline(inFile, line)) {
-            size_t spacePos = line.find(' ');
-            int cusNo = stoi(line.substr(0, spacePos));
-            lastCusNo = cusNo;
-
-            size_t lastSpace = line.rfind(' ');
-            if (lastSpace != string::npos) {
-                string lastPart = line.substr(lastSpace + 1);
-                size_t secondLastSpace = line.rfind(' ', lastSpace - 1);
-                string secondLastPart = line.substr(secondLastSpace + 1, lastSpace - secondLastSpace - 1);
-
-                monthlyProductsSold = stoi(lastPart);
-                monthlySales = stoi(secondLastPart);
-            }
-        }
-        inFile.close();
-        CusNo = lastCusNo + 1;
-    } else {
-        CusNo = 1;
-    }
-
-    cout << "Select Product by Number:" << endl;
-    cout << "\t\t\tPrice" << endl;
-    cout << "[1] Cappuccino - \t120" << endl;
-    cout << "[2] Iced Coffee - \t110" << endl;
-    cout << "[3] Latte - \t\t110" << endl;
-    cout << "[4] Hot Cocoa - \t110" << endl;
-    cout << "[5] Coffee Jelly - \t80" << endl;
-    cout << "[6] Macaron - \t\t75" << endl;
-    cout << "[7] Tea - \t\t70" << endl;
-    cout << "[8] Muffin - \t\t65" << endl;
-    cout << "[9] Bagel - \t\t65" << endl;
-    cout << "[10] Espresso - \t60" << endl;
-
+    cout << "-----------------------------" << endl;
+    cout << "|\033[1m Select Product by Number: \033[0m|" << endl;
+    cout << "|---------------------------|" << endl;
+    cout << "|                     Price |" << endl;
+    cout << "| [1] Cappuccino    -  120  |" << endl;
+    cout << "| [2] Iced Coffee   -  110  |" << endl;
+    cout << "| [3] Latte         -  110  |" << endl;
+    cout << "| [4] Hot Cocoa     -  110  |" << endl;
+    cout << "| [5] Coffee Jelly  -  80   |" << endl;
+    cout << "| [6] Macaron       -  75   |" << endl;
+    cout << "| [7] Tea           -  70   |" << endl;
+    cout << "| [8] Muffin        -  65   |" << endl;
+    cout << "| [9] Bagel         -  65   |" << endl;
+    cout << "| [10] Espresso     -  60   |" << endl;
+    cout << "-----------------------------" << endl;
+    cout << "-----------------------------" << endl;
     cout << "Enter Product Number: ";
-    cin >> ProductChoice;
+    cin >> productChoice;
 
-    switch (ProductChoice) {
-        case 1: {Price = 120; ProductName = "Cappuccino";} break;
-        case 2: {Price = 110; ProductName = "Iced_Coffee";} break;
-        case 3: {Price = 110; ProductName = "Latte";} break;
-        case 4: {Price = 110; ProductName = "Hot_Cocoa";} break;
-        case 5: {Price = 80; ProductName = "Coffee_Jelly";} break;
-        case 6: {Price = 75; ProductName = "Macaron";} break;
-        case 7: {Price = 70; ProductName = "Tea";} break;
-        case 8: {Price = 65; ProductName = "Muffin";} break;
-        case 9: {Price = 65; ProductName = "Bagel";} break;
-        case 10: {Price = 60; ProductName = "Espresso";} break;
-        default:
-            cout << "Invalid Product Choice!" << endl;
-            return;
+    switch (productChoice) {
+        case 1: price = 120; productName = "Cappuccino"; break;
+        case 2: price = 110; productName = "Iced_Coffee"; break;
+        case 3: price = 110; productName = "Latte"; break;
+        case 4: price = 110; productName = "Hot_Cocoa"; break;
+        case 5: price = 80; productName = "Coffee_Jelly"; break;
+        case 6: price = 75; productName = "Macaron"; break;
+        case 7: price = 70; productName = "Tea"; break;
+        case 8: price = 65; productName = "Muffin"; break;
+        case 9: price = 65; productName = "Bagel"; break;
+        case 10: price = 60; productName = "Espresso"; break;
+        default: cout << "Invalid choice!\n"; return;
     }
 
-    cout << "Enter Quantity: ";
-    cin >> Qnt;
+    cout << "Enter quantity: ";
+    cin >> qty;
 
-    int Sales = Qnt * Price;
+    int sales = qty * price;
+    monthlySales += sales;
+    monthlyProductsSold += qty;
 
-    monthlySales += Sales;
-    monthlyProductsSold += Qnt;
-
-    ofstream outFile(monthFiles[Month - 1], ios::app);
-    if (!outFile) {
-        cerr << "Error: Could not open file for writing." << endl;
-        return;
-    }
-
-    outFile << CusNo << ' ' << ProductName << ' ' << Qnt << ' ' << Price << ' ' << Sales << ' ' << monthlySales << ' ' << monthlyProductsSold << endl;
-
+    ofstream outFile(monthFiles[month - 1], ios::app);
+    if (!outFile) { cerr << "Error opening file.\n"; return; }
+    outFile << cusNo << ' ' << productName << ' ' << qty << ' ' << price << ' ' << sales << ' ' << monthlySales << ' ' << monthlyProductsSold << endl;
     outFile.close();
 
-    cout << "Transaction saved successfully." << endl;
-    cout << "Total Sales: " << Sales << endl;
-
-    main();
+    system ("cls");
+    cout << "Transaction saved. "<< endl;
+    system ("pause");
 }
-
 
 void database()
 {
     system("cls");
-
+    
     int Month;
-    cout << "Search Databases by Month" << endl;
-    cout << "[1] - January \t\t" << "[7] - July" << endl;
-    cout << "[2] - February \t\t" << "[8] - August" << endl;
-    cout << "[3] - March \t\t" << "[9] - September" << endl;
-    cout << "[4] - April \t\t" << "[10] - October" << endl;
-    cout << "[5] - May \t\t" << "[11] - November" << endl;
-    cout << "[6] - June \t\t" << "[12] - December" << endl;
-
-    cout << "Enter Month: ";
-    cin >> Month;
-
-    if (Month < 1 || Month > 12) {
-        cout << "Invalid Month!" << endl;
-        return;
-    }
-
+    monthlyChoice(Month);
     viewMonthDatabase(Month);
 }
 
-void viewMonthDatabase(int month)
-{
-    string monthFiles[] = {
-        "Database/JanDatabase.txt", "Database/FebDatabase.txt", "Database/MarDatabase.txt",
-        "Database/AprDatabase.txt", "Database/MayDatabase.txt", "Database/JunDatabase.txt",
-        "Database/JulDatabase.txt", "Database/AugDatabase.txt", "Database/SepDatabase.txt",
-        "Database/OctDatabase.txt", "Database/NovDatabase.txt", "Database/DecDatabase.txt"};
-
-    ifstream monthFile(monthFiles[month - 1]);
-    if (!monthFile) {
-        cout << "Unable to open file for this month." << endl;
-        return;
+void overview() {
+    system("cls");
+    int choice;
+    cout << "---------------------------------" << endl;
+    cout << "|\033[1;94m       Database Overview       \033[0m|" << endl;
+    cout << "|-------------------------------|" << endl;
+    cout << "|  [1] - Monthly Overview       |" << endl;
+    cout << "|  [2] - Yearly Overview        |" << endl;
+    cout << "|  [3] - Compare Monthly Sales  |" << endl;
+    cout << "---------------------------------" << endl;
+    cout << "Choose an Option Between 1-3: ";
+    cin >> choice;
+    switch (choice) {
+        case 1: monthly(); break;
+        case 2: yearly(); break;
+        case 3: compare(); break;
     }
-    int CusNo, ProductChoice, Qnt, Sales, Price, monthlySales, monthlyProductsSold;
-    string ProductName;
+}
 
-    DisplayDatabase();
-    while (monthFile >> CusNo >> ProductName >> Qnt >> Price >> Sales >> monthlySales >> monthlyProductsSold) {
-        cout << left  << "\t" << CusNo << "\t\t"  << setw(20) << ProductName  << Qnt << "\t\t" << Price << "\t\t" << Sales << endl;
+void exitProgram() {
+    system("CLS");
+    cout << "Logging Off (press enter)...\n";
+    cin.ignore();
+    cin.get();
+    exit(0);
+}
+
+void monthlyChoice(int& month) {
+    cout << "------------------------------------------------" << endl;
+    cout << "|\033[1;94m         Search Databases by Month           \033[0m|" << endl;
+    cout << "|----------------------------------------------|" << endl;
+    cout << "|   [1] - January      |   [7] - July          |" << endl;
+    cout << "|   [2] - February     |   [8] - August        |" << endl;
+    cout << "|   [3] - March        |   [9] - September     |" << endl;
+    cout << "|   [4] - April        |   [10] - October      |" << endl;
+    cout << "|   [5] - May          |   [11] - November     |" << endl;
+    cout << "|   [6] - June         |   [12] - December     |" << endl;
+    cout << "------------------------------------------------" << endl;
+    
+    cout << "\nEnter Month: ";
+    cin >> month;
+    if (month < 1 || month > 12) { cout << "Invalid month\n"; return; }
+}
+
+void viewMonthDatabase(int month) {
+    ifstream monthFile(monthFiles[month - 1]);
+    if (!monthFile) { cout << "Unable to open file.\n"; 
+    system("pause"); 
+    return; }
+    
+    int cusNo, qty, sales, price, monthlySales, monthlyProductsSold;
+    string productName;
+
+    system("CLS");
+    cout << "---------------------------------------------------------------------------------" << endl;
+    cout << "|\t\t\t\t\t\033[1mCustomer Database\t\t\t\t\t\033[0m|" << endl;
+    cout << "|-------------------------------------------------------------------------------|" << endl;
+    cout << left << "|Customer Number\t\tProduct\t\tQuantity\tPrice\t\tSales\t|" << endl;
+    cout << "|-------------------------------------------------------------------------------|" << endl;
+
+    while (monthFile >> cusNo >> productName >> qty >> price >> sales >> monthlySales >> monthlyProductsSold) {
+        cout <<left << "|\t" << cusNo << "\t\t" << setw(20) << productName << qty << "\t\t" << price << "\t\t" << sales << "\t|" << endl;
     }
     monthFile.close();
-    PauseDatabase();
-}
 
-
-void DisplayDatabase()
-{
-    system("CLS");
-    cout << "Customer Database" << endl;
-    cout << left << "Customer Number\t\t" << "Product\t\t" << "Quantity\t" << "Price\t\t" << "Sales" << endl;
-    cout << "---------------------------------------------------------------------------------------------------------------------------------" << endl;
-}
-
-void PauseDatabase()
-{
+    cout << "---------------------------------------------------------------------------------\n";
     system("pause");
-    cin.get();
-    main();
 }
 
-void exit()
-{
-    system("CLS");
-    cout << "Logging Off The Program(press enter)..." << endl;
-    cin.get();
-}
-
-
-void overview ()
-{
-    system ("cls");
-
-    int choice;
-
-    cout << "[1] - Monthly Overview" << endl;
-    cout << "[2] - Yearly Overview" << endl;
-    cout << "[3] - Compare Monthly Sales" << endl;
-
-    cin >> choice;
-
-    switch (choice)
-    {
-        case 1 : monthly (); break;
-        case 2 : yearly (); break;
-        case 3 : compare (); break;
-    }
-}
-void monthly() {
-
-    system("cls");
-
-    int Month;
-    cout << "Search Databases by Month" << endl;
-    cout << "[1] - January \t\t" << "[7] - July" << endl;
-    cout << "[2] - February \t\t" << "[8] - August" << endl;
-    cout << "[3] - March \t\t" << "[9] - September" << endl;
-    cout << "[4] - April \t\t" << "[10] - October" << endl;
-    cout << "[5] - May \t\t" << "[11] - November" << endl;
-    cout << "[6] - June \t\t" << "[12] - December" << endl;
-
-    cout << "Enter Month: ";
-    cin >> Month;
-
-    if (Month < 1 || Month > 12) {
-        cout << "Invalid Month!" << endl;
-        return;
-    }
-
-    string monthFiles[] = {
-        "Database/JanDatabase.txt", "Database/FebDatabase.txt", "Database/MarDatabase.txt",
-        "Database/AprDatabase.txt", "Database/MayDatabase.txt", "Database/JunDatabase.txt",
-        "Database/JulDatabase.txt", "Database/AugDatabase.txt", "Database/SepDatabase.txt",
-        "Database/OctDatabase.txt", "Database/NovDatabase.txt", "Database/DecDatabase.txt"};
-
+void ReadData(int Month, int& lastCusNo, int& monthlySales, int& monthlyProductsSold) {
     ifstream inFile(monthFiles[Month - 1]);
-    int lastCusNo = 0, monthlySales = 0, monthlyProductsSold = 0;
     string line;
+
+    monthlySales = 0;
+    monthlyProductsSold = 0;
+    lastCusNo = 0;
 
     if (inFile) {
         while (getline(inFile, line)) {
             size_t spacePos = line.find(' ');
-            int cusNo = stoi(line.substr(0, spacePos));
-            lastCusNo = cusNo;
+            lastCusNo = stoi(line.substr(0, spacePos));
 
             size_t lastSpace = line.rfind(' ');
             if (lastSpace != string::npos) {
@@ -288,30 +215,30 @@ void monthly() {
             }
         }
         inFile.close();
-
-        system("cls");
-
-        cout << "Last Customer Number: " << lastCusNo << endl;
-        cout << "Monthly Sales: " << monthlySales << endl;
-        cout << "Monthly Products Sold: " << monthlyProductsSold << endl;
-
     } else {
         cout << "No data available for the selected month." << endl;
+        system("pause");
+        main();
     }
-
-    system("pause");
-    main();
 }
+
+void monthly() {
+    system("cls");
+    int month, lastCusNo = 0, monthlySales = 0, monthlyProductsSold = 0;
+    monthlyChoice(month);
+    ReadData(month, lastCusNo, monthlySales, monthlyProductsSold);
+    system("cls");
+    cout << "Last Customer Number: " << lastCusNo << endl;
+    cout << "Monthly Sales: " << monthlySales << endl;
+    cout << "Monthly Products Sold: " << monthlyProductsSold << endl;
+    system("pause");
+}
+
 
 void yearly() {
     system("cls");
 
     int totalCustomers = 0, totalSales = 0, totalProductsSold = 0;
-    string monthFiles[] = {
-        "Database/JanDatabase.txt", "Database/FebDatabase.txt", "Database/MarDatabase.txt",
-        "Database/AprDatabase.txt", "Database/MayDatabase.txt", "Database/JunDatabase.txt",
-        "Database/JulDatabase.txt", "Database/AugDatabase.txt", "Database/SepDatabase.txt",
-        "Database/OctDatabase.txt", "Database/NovDatabase.txt", "Database/DecDatabase.txt"};
 
     for (int i = 0; i < 12; i++) {
         ifstream inFile(monthFiles[i]);
@@ -348,8 +275,47 @@ void yearly() {
     main();
 }
 
+void compare() {
+    system("cls");
 
-void compare ()
-{
-    
+    int month1, month2;
+    cout << "Enter the first month number to compare (1-12): ";
+    cin >> month1;
+    cout << "Enter the second month number to compare (1-12): ";
+    cin >> month2;
+
+    if (month1 < 1 || month1 > 12 || month2 < 1 || month2 > 12) {
+        cout << "Invalid months entered!" << endl;
+        return;
+    }
+
+    system("cls");
+
+    int lastCusNo1 = 0, monthlySales1 = 0, monthlyProductsSold1 = 0;
+    int lastCusNo2 = 0, monthlySales2 = 0, monthlyProductsSold2 = 0;
+
+    ReadData(month1, lastCusNo1, monthlySales1, monthlyProductsSold1);
+    ReadData(month2, lastCusNo2, monthlySales2, monthlyProductsSold2);
+
+    cout << "-------------------------------------" << endl;
+    cout << "|\033[1;94m    Monthly Sales Comparison      \033[0m|" << endl;
+    cout << "|-----------------------------------|" << endl;
+
+    cout << left << "|      " << monthNames[month1 - 1] << " Sales: \t" << setw(12) << monthlySales1 << "|" << endl;
+    cout << left << "|      " << monthNames[month2 - 1] << " Sales: \t" << setw(12) << monthlySales2 << "|"<< endl;
+
+    cout << "-------------------------------------" << endl << endl;
+
+    if (monthlySales1 > monthlySales2) {
+        
+        cout << monthNames[month1 - 1] << " had higher monthly sales than " << monthNames[month2 - 1] << "." << endl << endl;
+    } else if (monthlySales1 < monthlySales2) {
+        cout << monthNames[month2 - 1] << " had higher monthly sales than " << monthNames[month1 - 1] << "." << endl << endl;
+    } else {
+        cout << "Both months have the same sales." << endl << endl;
+    }
+
+    system("pause");
 }
+
+
